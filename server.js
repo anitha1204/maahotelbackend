@@ -17,6 +17,6 @@ app.use(cors());
 // Define Routes
 app.use('/api/auth', authRoutes);
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 1000;
 
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
