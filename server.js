@@ -12,7 +12,13 @@ connectDB();
 
 // Init Middleware
 app.use(express.json({ extended: false }));
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:5173', // Allow your frontend origin
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
+    credentials: true // Enable set cookie
+}));
+
 
 // Define Routes
 app.use('/api/auth', authRoutes);
