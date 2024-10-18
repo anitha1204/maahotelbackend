@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 const MaahotelDatas = require('../models/userModel');
 
-dotenv.confi();
+dotenv.config();
 
 // Function to send email
 const sendResetEmail = async (email, token) => {
