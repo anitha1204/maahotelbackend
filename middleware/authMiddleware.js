@@ -1,22 +1,28 @@
+
 const jwt = require('jsonwebtoken');
-const User = require('../models/userModel');
+const dotenv = require('dotenv');
 
-exports.protect = async (req, res, next) => {
-  let token;
+dotenv.config();
 
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
-    token = req.headers.authorization.split(' ')[1];
-  }
+// Add a log to check if JWT_SECRET is loaded
+console.log('JWT_SECRET:', process.env.JWT_SECRET);
 
+module.exports = function (req, res, next) {
+  const token = req.header('x-auth-token');
   if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
+    return res.status(401).json({ msg: 'No token, authorization denied' });
   }
-
   try {
+    // Ensure that JWT_SECRET is not undefined
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET is not defined');
+      return res.status(500).send('Server configuration error');
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id);
+    req.user = decoded.user;
     next();
-  } catch (error) {
-    return res.status(401).json({ message: 'Not authorized, token failed' });
+  } catch (err) {
+    res.status(401).json({ msg: 'Token is not valid' });
   }
 };

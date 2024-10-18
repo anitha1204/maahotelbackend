@@ -12,17 +12,13 @@ connectDB();
 
 // Init Middleware
 app.use(express.json({ extended: false }));
-// app.use(cors());
-app.use(cors({
-    origin: 'http://localhost:5173', // Allow your frontend origin
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allowed methods
-    credentials: true // Enable set cookie
-}));
 
+// CORS setup
+app.use(cors());
 
 // Define Routes
 app.use('/api/auth', authRoutes);
 
-const PORT = process.env.PORT || 1000;
 
+const PORT = 1000;
 app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
