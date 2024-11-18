@@ -132,6 +132,7 @@ const register = async (req, res) => {
     }
 };
 
+
 // Login Function
 const login = async (req, res) => {
     const { usernameOrEmail, password } = cleanInput(req.body);
@@ -278,11 +279,35 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// Get User Profile Controller
+const getUserProfile = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Find user by ID and exclude sensitive information like the password
+        const user = await MaahotelDatas.findById(userId).select('-password');
+
+        if (!user) {
+            return res.status(404).json({ msg: 'User not found' });
+        }
+
+        res.json({
+            name: user.username,
+            email: user.email,
+            // Add other profile fields if needed
+        });
+    } catch (error) {
+        console.error('Error fetching user profile:', error.stack);
+        res.status(500).json({ msg: 'Server error' });
+    }
+};
+
 module.exports = {
     register,
     login,
     forgotPassword,
     resetPassword,
+    getUserProfile,
 };
 
 
