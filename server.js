@@ -1,7 +1,7 @@
 const express = require('express');
 const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
-const guestRoutes = require('./routes/guestRoutes');
+const  bookingRoutes = require('./routes/bookingRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const dotenv = require('dotenv');
 const cors = require('cors');
@@ -20,7 +20,7 @@ app.use(cors());
 
 // Define Routes
 app.use('/api/auth', authRoutes);
-app.use('/api', guestRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 
 
