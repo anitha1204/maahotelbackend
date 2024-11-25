@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema(
   {
-    bookingStaffName: { type: String, required: true },
     sourceOfLooking: { type: String, required: true },
     bookingPersonName: { type: String, required: true },
     mobileNumber: {
@@ -32,7 +31,10 @@ const bookingSchema = new mongoose.Schema(
     checkInDate: { type: Date, required: true },
     time: { type: String, required: true },
     amPm: { type: String, required: true, enum: ['AM', 'PM'] }, // Restrict to valid options
-    
+    extra: { type: String, default: null },
+    gst: { type: String, default: null },
+    bookingPayment:{type: Number, required: true},
+    paymentType: { type: String, required: true },
   },
   { timestamps: true }
 );
