@@ -34,7 +34,10 @@ const bookingSchema = new mongoose.Schema(
     extra: { type: String, default: null },
     gst: { type: String, default: null },
     bookingPayment:{type: Number, required: true},
-    paymentType: { type: String, required: true },
+    paymentType: {
+      type: [String], // Change from String to an Array of Strings
+      required: true
+    }
   },
   { timestamps: true }
 );
