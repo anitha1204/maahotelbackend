@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
 
+let bookingCounter = 1;
+
 const bookingSchema = new mongoose.Schema(
   {
     sourceOfLooking: { type: String, required: true },
@@ -41,5 +43,13 @@ const bookingSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+// Middleware to auto-generate booking ID
+bookingSchema.pre("save", async function (next) {
+  const paddedCounter = bookingCounter.toString().padStart(4, "0");
+  this.bookingId = paddedCounter;
+  bookingCounter++; // Increment counter
+  next();
+});
 
 module.exports = mongoose.model('Booking', bookingSchema);
