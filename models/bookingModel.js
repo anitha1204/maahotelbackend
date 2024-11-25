@@ -24,7 +24,7 @@ const bookingSchema = new mongoose.Schema(
         message: (props) => `${props.value} is not a valid email address!`,
       },
     },
-    guestDetails: { type: Number, required: true },
+    guestDetails: { type: Number, default: null},
     acNonac: { type: String, required: true, enum: ['AC', 'Non-AC'] }, // Restrict to valid options
     roomType: { type: String, required: true },
     addressDetails: { type: String, required: true },
