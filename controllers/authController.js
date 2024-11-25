@@ -451,44 +451,7 @@ const register = async (req, res) => {
     }
 };
 
-// Register Function (GET)
-const registerGet = async (req, res) => {
-    const { username, email } = req.query; // Use `req.query` for GET
 
-    try {
-        if (!username || !email) {
-            return res.status(400).json({ msg: 'Username and email are required' });
-        }
-
-        // Validate username and email
-        if (!validateUsername(username)) {
-            return res.status(400).json({ msg: 'Invalid username format' });
-        }
-
-        if (!validateEmail(email)) {
-            return res.status(400).json({ msg: 'Invalid email format' });
-        }
-
-        const uppercaseUsername = username.toUpperCase();
-
-        let user = await MaahotelDatas.findOne({ $or: [{ username: uppercaseUsername }, { email }] });
-
-        if (user) {
-            return res.status(400).json({ msg: 'User already exists' });
-        }
-
-        user = new MaahotelDatas({ username: uppercaseUsername, email });
-
-        const salt = await bcrypt.genSalt(10);
-
-        await user.save();
-
-        res.status(201).json({ msg: 'User registered successfully' });
-    } catch (error) {
-        console.error('Error during GET registration:', error.stack);
-        res.status(500).send('Server error');
-    }
-};
 
 // Login Function
 const login = async (req, res) => {
@@ -529,7 +492,14 @@ const login = async (req, res) => {
 
             debugLog('Generated JWT', token);
 
-            res.json({ msg: 'Login successful', token });
+            res.json({
+                msg: 'Login successful',
+                token,
+                user: {
+                    username: user.username,
+                    email: user.email
+                }
+            });
         });
     } catch (error) {
         console.error('Error during login:', error.stack);
@@ -597,7 +567,7 @@ const resetPassword = async (req, res) => {
 
 module.exports = {
     register,
-    registerGet,
+   
     login,
     forgotPassword,
     resetPassword,
