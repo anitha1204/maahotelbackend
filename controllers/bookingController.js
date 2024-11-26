@@ -72,103 +72,51 @@
 const Booking = require('../models/bookingModel');
 const nodemailer = require("nodemailer");
 
-
-const createTransporter = () => {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USERNAME,
-        pass: process.env.EMAIL_PASSWORD,
-      },
-    });
-  };
-  
-  // Function to send confirmation email to the user
-  const sendConfirmationEmail = async (booking) => {
-    try {
-      const transporter = createTransporter();
-      const mailOptions = {
-        from: process.env.EMAIL_USERNAME,
-        to: booking.emailAddress,
-        subject: "Booking Confirmation - Maa Hotels",
-        text: `
-          Dear ${booking.bookingPersonName},
-  
-          Thank you for booking with us!
-          Booking Details:
-          - Booking ID: ${booking.bookingId}
-          - Name: ${booking.bookingPersonName}
-          - Phone: ${booking.mobileNumber}
-          - Email: ${booking.emailAddress}
-          - Room Type: ${booking.roomType}
-          - AC/Non-AC: ${booking.acNonac}
-          - Payment: ${booking.bookingPayment}
-          - Payment Type: ${booking.paymentType.join(", ")}
-  
-          Regards,
-          Maa Hotels
-        `,
-      };
-      await transporter.sendMail(mailOptions);
-      console.log("Confirmation email sent successfully.");
-    } catch (error) {
-      console.error("Error sending confirmation email:", error.message);
-    }
-  };
-  
-  // Function to send notification email to the hotel
-  const sendNotificationEmail = async (booking) => {
-    try {
-      const transporter = createTransporter();
-      const mailOptions = {
-        from: process.env.EMAIL_USERNAME,
-        to: process.env.EMAIL_USERNAME, // Replace with the hotel's email address
-        subject: "New Booking Notification",
-        text: `
-          New Booking Received:
-          - Booking ID: ${booking.bookingId}
-          - Name: ${booking.bookingPersonName}
-          - Phone: ${booking.mobileNumber}
-          - Email: ${booking.emailAddress}
-          - Room Type: ${booking.roomType}
-          - AC/Non-AC: ${booking.acNonac}
-          - Payment: ${booking.bookingPayment}
-          - Payment Type: ${booking.paymentType.join(", ")}
-  
-          Please prepare accordingly.
-        `,
-      };
-      await transporter.sendMail(mailOptions);
-      console.log("Notification email sent successfully.");
-    } catch (error) {
-      console.error("Error sending notification email:", error.message);
-    }
-  };
-
 // Create new booking
 exports.addBooking = async (req, res) => {
     try {
         const booking = new Booking(req.body);
         const savedBooking = await booking.save();
+
+        console.log("Booking saved successfully:", savedBooking);
+
+        // Send booking confirmation email
+        await send(
+            savedBooking.bookingPersonName,
+            savedBooking.mobileNumber,
+            savedBooking.emailAddress,
+            savedBooking.guestDetails,
+            savedBooking.acNonac,
+            savedBooking.roomType,
+            savedBooking.addressDetails,
+            savedBooking.checkInDate,
+            savedBooking.time,
+            savedBooking.amPm,
+            savedBooking.roomRent,
+            savedBooking.gst,
+            savedBooking.bookingPayment,
+            savedBooking.paymentType
+        );
+
+        // Send notification email to hotel
+        await sendNotificationEmail(savedBooking.bookingPersonName);
+
         res.status(201).json(savedBooking);
     } catch (error) {
         console.error("Error creating booking:", error.message);
-        
+
         // Handle validation errors
-        if (error.name === 'ValidationError') {
+        if (error.name === "ValidationError") {
             return res.status(400).json({
-                errors: Object.values(error.errors).map(err => err.message),
+                errors: Object.values(error.errors).map((err) => err.message),
             });
         }
-         
-        // Send emails
-    await sendConfirmationEmail(savedBooking);
-    await sendNotificationEmail(savedBooking);
 
         // Handle generic server errors
-        res.status(500).json({ error: 'Server error. Please try again later.' });
+        res.status(500).json({ error: "Server error. Please try again later." });
     }
 };
+
 
 // Get all bookings
 exports.getBookings = async (req, res) => {
@@ -218,3 +166,99 @@ exports.deleteBooking = async (req, res) => {
 };
 
 
+
+const createTransporter = () => {
+    return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: "selvam12042003@gmail.com", // Your Gmail address
+            pass: "jxjj csdq qked wrku", // Your Google App Password
+        },
+    });
+};
+
+const send = async (
+    bookingPersonName,
+    mobileNumber,
+    emailAddress,
+    guestDetails,
+    acNonac,
+    roomType,
+    addressDetails,
+    checkInDate,
+    time,
+    amPm,
+    roomRent,
+    gst,
+    bookingPayment,
+    paymentType
+) => {
+    try {
+        console.log(`Attempting to send confirmation email to ${emailAddress}`);
+        const transporter = createTransporter();
+
+        const mailOptions = {
+            from: "selvam12042003@gmail.com",
+            to: emailAddress,
+            subject: "Room Booking Confirmation - Maa Hotels",
+            text: `
+            Dear ${bookingPersonName},
+
+            Thank you for booking with Maa Hotels. Here are your booking details:
+
+            - Name: ${bookingPersonName}
+            - Phone: ${mobileNumber}
+            - Email: ${emailAddress}
+            - Address: ${addressDetails}
+            - Guests: ${guestDetails}
+            - AC/Non-AC: ${acNonac}
+            - Room Type: ${roomType}
+            - Check-in Date: ${checkInDate}
+            - Time: ${time} ${amPm}
+            - Room Rent: ${roomRent} (GST: ${gst})
+            - Booking Payment: ${bookingPayment}
+            - Payment Type: ${paymentType.join(", ")}
+
+            We look forward to hosting you.
+
+            Regards,
+            Maa Hotels
+            `,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`Confirmation email successfully sent to ${emailAddress}`);
+    } catch (error) {
+        console.error(`Error sending confirmation email to ${emailAddress}:`, error.message);
+    }
+};
+
+const sendNotificationEmail = async (bookingPersonName) => {
+    try {
+        console.log("Attempting to send notification email to hotel team");
+        const transporter = createTransporter();
+
+        const mailOptions = {
+            from: "selvam12042003@gmail.com",
+            to: "selvam12042003@gmail.com", // Hotel's email address
+            subject: "New Room Booking Notification",
+            text: `
+            Dear Hotel Team,
+
+            A new booking has been made:
+
+            - Guest Name: ${bookingPersonName}
+
+            Please check the admin panel for more details.
+
+            Best regards,
+            Maa Hotels
+            `,
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log("Notification email successfully sent to hotel team");
+    } catch (error) {
+        console.error("Error sending notification email:", error.message);
+    }
+};
