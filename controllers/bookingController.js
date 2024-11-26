@@ -142,31 +142,13 @@ exports.getBookings = async (req, res) => {
     }
 };
 
-
-// Search bookings by booking person name or booking ID
-exports.searchBookings = async (req, res) => {
+// Search companies by name
+exports.searchBooking = async (req, res) => {
     try {
-        const { query } = req.query;
-        
-        // Validate that the query is not empty
-        if (!query) {
-            return res.status(400).json({ error: 'Booking ID is required.' });
-        }
-
-        // Search specifically by booking ID (case-insensitive)
-        const bookings = await Booking.find({ 
-            bookingId: new RegExp(query, 'i') 
-        });
-
-        // If no bookings found
-        if (bookings.length === 0) {
-            return res.status(404).json({ message: 'No bookings found with this Booking ID.' });
-        }
-
-        // Return found bookings
-        res.status(200).json(bookings);
+        const { id } = req.query; 
+        const  bookings = await Booking.find({  bookingId: new RegExp(id , 'i') });
+        res.status(200).json( bookings);
     } catch (error) {
-        console.error('Error searching bookings:', error.message);
         res.status(500).json({ error: 'Server error. Please try again later.' });
     }
 };
