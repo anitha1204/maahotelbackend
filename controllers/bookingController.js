@@ -153,7 +153,7 @@ exports.searchBookings = async (req, res) => {
 
         const bookings = await Booking.find({
             $or: [
-                { bookingPersonName: new RegExp(query, 'i') }, // Case-insensitive search for name
+               
                 { bookingId: new RegExp(query, 'i') }, // Case-insensitive search for bookingId
             ],
         });
