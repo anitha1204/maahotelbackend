@@ -146,22 +146,25 @@ exports.getBookings = async (req, res) => {
 // Search bookings by booking person name or booking ID
 exports.searchBookings = async (req, res) => {
     try {
-        const { query } = req.query; // Accept a generic 'query' parameter
+        const { query } = req.query; // Accept a search query parameter
         if (!query) {
             return res.status(400).json({ error: 'Search query is required.' });
         }
 
+        // Search bookings by booking person name or booking ID (case-insensitive)
         const bookings = await Booking.find({
             $or: [
-                { bookingPersonName: new RegExp(query, 'i') }, // Case-insensitive search for name
-                { bookingId: new RegExp(query, 'i') }, // Case-insensitive search for bookingId
+                { bookingPersonName: new RegExp(query, 'i') }, 
+                { bookingId: new RegExp(query, 'i') }
             ],
         });
 
+        // If no bookings found
         if (bookings.length === 0) {
             return res.status(404).json({ message: 'No bookings found matching the query.' });
         }
 
+        // Return found bookings
         res.status(200).json(bookings);
     } catch (error) {
         console.error('Error searching bookings:', error.message);
