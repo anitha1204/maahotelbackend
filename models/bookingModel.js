@@ -59,6 +59,7 @@ const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema(
   {
+    bookingId: { type: String, required: true, unique: true },
     sourceOfLooking: { type: String, required: true },
     bookingPersonName: { type: String, required: true },
     mobileNumber: {

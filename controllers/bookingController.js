@@ -72,16 +72,29 @@
 const Booking = require('../models/bookingModel');
 const nodemailer = require("nodemailer");
 
+
+const generateBookingId = async () => {
+    const lastBooking = await Booking.findOne().sort({ createdAt: -1 }); // Fetch the most recent booking
+    if (lastBooking && lastBooking.bookingId) {
+        const lastId = parseInt(lastBooking.bookingId, 10); // Convert to integer
+        return String(lastId + 1).padStart(4, '0'); // Increment and pad with leading zeros
+    }
+    return "0001"; // Start from 0001 if no bookings exist
+};
+
 // Create new booking
 exports.addBooking = async (req, res) => {
     try {
-        const booking = new Booking(req.body);
+        const bookingId = await generateBookingId(); // Generate the next booking ID
+        const bookingData = { ...req.body, bookingId }; // Include booking ID in booking data
+        const booking = new Booking(bookingData);
         const savedBooking = await booking.save();
 
         console.log("Booking saved successfully:", savedBooking);
 
         // Send booking confirmation email
         await send(
+            savedBooking.bookingId, // Include booking ID
             savedBooking.bookingPersonName,
             savedBooking.mobileNumber,
             savedBooking.emailAddress,
@@ -99,7 +112,7 @@ exports.addBooking = async (req, res) => {
         );
 
         // Send notification email to hotel
-        await sendNotificationEmail(savedBooking.bookingPersonName);
+        await sendNotificationEmail(savedBooking.bookingId, savedBooking.bookingPersonName);
 
         res.status(201).json(savedBooking);
     } catch (error) {
@@ -116,6 +129,7 @@ exports.addBooking = async (req, res) => {
         res.status(500).json({ error: "Server error. Please try again later." });
     }
 };
+
 
 
 // Get all bookings
@@ -177,7 +191,9 @@ const createTransporter = () => {
     });
 };
 
+
 const send = async (
+    bookingId,
     bookingPersonName,
     mobileNumber,
     emailAddress,
@@ -200,12 +216,13 @@ const send = async (
         const mailOptions = {
             from: "selvam12042003@gmail.com",
             to: emailAddress,
-            subject: "Room Booking Confirmation - Maa Hotels",
+            subject: `Booking Confirmation - Maa Hotels (ID: ${bookingId})`,
             text: `
             Dear ${bookingPersonName},
 
             Thank you for booking with Maa Hotels. Here are your booking details:
 
+            - Booking ID: ${bookingId}
             - Name: ${bookingPersonName}
             - Phone: ${mobileNumber}
             - Email: ${emailAddress}
@@ -233,7 +250,8 @@ const send = async (
     }
 };
 
-const sendNotificationEmail = async (bookingPersonName) => {
+// Updated notification email to include booking ID
+const sendNotificationEmail = async (bookingId, bookingPersonName) => {
     try {
         console.log("Attempting to send notification email to hotel team");
         const transporter = createTransporter();
@@ -241,12 +259,13 @@ const sendNotificationEmail = async (bookingPersonName) => {
         const mailOptions = {
             from: "selvam12042003@gmail.com",
             to: "selvam12042003@gmail.com", // Hotel's email address
-            subject: "New Room Booking Notification",
+            subject: `New Booking Notification (ID: ${bookingId})`,
             text: `
             Dear Hotel Team,
 
             A new booking has been made:
 
+            - Booking ID: ${bookingId}
             - Guest Name: ${bookingPersonName}
 
             Please check the admin panel for more details.
