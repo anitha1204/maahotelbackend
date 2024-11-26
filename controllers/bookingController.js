@@ -143,16 +143,42 @@ exports.getBookings = async (req, res) => {
 };
 
 
-exports.searchBooking = async (req, res) => {
+// Search bookings by booking person name or booking ID
+exports.searchBookings = async (req, res) => {
     try {
-        const { query } = req.query;  // Changed 'name' to 'query' for consistency
-        const bookings = await Booking.find({ bookingPersonName: new RegExp(query, 'i') });
+        const { query } = req.query; // Accept a generic 'query' parameter
+        if (!query) {
+            return res.status(400).json({ error: 'Search query is required.' });
+        }
+
+        const bookings = await Booking.find({
+            $or: [
+                { bookingPersonName: new RegExp(query, 'i') }, // Case-insensitive search for name
+                { bookingId: new RegExp(query, 'i') }, // Case-insensitive search for bookingId
+            ],
+        });
+
+        if (bookings.length === 0) {
+            return res.status(404).json({ message: 'No bookings found matching the query.' });
+        }
+
         res.status(200).json(bookings);
     } catch (error) {
+        console.error('Error searching bookings:', error.message);
         res.status(500).json({ error: 'Server error. Please try again later.' });
     }
 };
 
+
+// exports.searchBookings = async (req, res) => {
+//     try {
+//         const { name } = req.query;
+//         const  bookings = await Booking.find({  bookingId: new RegExp(name, 'i') });
+//         res.status(200).json( bookings);
+//     } catch (error) {
+//         res.status(500).json({ error: 'Server error. Please try again later.' });
+//     }
+// };
 
 // Get booking by ID
 exports.getBookingById = async (req, res) => {
