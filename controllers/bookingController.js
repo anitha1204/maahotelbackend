@@ -145,13 +145,14 @@ exports.getBookings = async (req, res) => {
 
 exports.searchBooking = async (req, res) => {
     try {
-        const { name } = req.query;
-        const bookings = await Booking.find({ bookingPersonName: new RegExp(name, 'i') });
+        const { query } = req.query;  // Changed 'name' to 'query' for consistency
+        const bookings = await Booking.find({ bookingPersonName: new RegExp(query, 'i') });
         res.status(200).json(bookings);
     } catch (error) {
         res.status(500).json({ error: 'Server error. Please try again later.' });
     }
 };
+
 
 // Get booking by ID
 exports.getBookingById = async (req, res) => {
