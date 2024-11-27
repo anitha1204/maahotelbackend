@@ -1,17 +1,15 @@
 
-
-
 // const Booking = require('../models/bookingModel');
 // const nodemailer = require("nodemailer");
 
 
 // const generateBookingId = async () => {
-//     const lastBooking = await Booking.findOne().sort({ createdAt: -1 }); // Fetch the most recent booking
+//     const lastBooking = await Booking.findOne().sort({ createdAt: -1 });
 //     if (lastBooking && lastBooking.bookingId) {
-//         const lastId = parseInt(lastBooking.bookingId, 10); // Convert to integer
-//         return String(lastId + 1).padStart(4, '0'); // Increment and pad with leading zeros
+//         const lastId = parseInt(lastBooking.bookingId, 10);
+//         return String(lastId + 1).padStart(4, '0');
 //     }
-//     return "0001"; // Start from 0001 if no bookings exist
+//     return "0001";
 // };
 
 // // Create new booking
@@ -77,9 +75,16 @@
 // // Search companies by name
 // exports.searchBooking = async (req, res) => {
 //     try {
-//         const { id } = req.query; 
-//         const  bookings = await Booking.find({  bookingId: new RegExp(id , 'i') });
-//         res.status(200).json( bookings);
+//         const { query } = req.query; 
+//         const bookings = await Booking.find({
+//             $or: [
+//                 { bookingId: new RegExp(query, 'i') },
+//                 { bookingPersonName: new RegExp(query, 'i') },
+//                 { mobileNumber: new RegExp(query, 'i') },
+//                 { emailAddress: new RegExp(query, 'i') }
+//             ]
+//         });
+//         res.status(200).json(bookings);
 //     } catch (error) {
 //         res.status(500).json({ error: 'Server error. Please try again later.' });
 //     }
@@ -358,17 +363,18 @@ exports.deleteBooking = async (req, res) => {
 
 
 
+// Create email transporter
 const createTransporter = () => {
     return nodemailer.createTransport({
-        service: "gmail",
+        service: 'gmail',
         auth: {
-            user: "selvam12042003@gmail.com", // Your Gmail address
-            pass: "jxjj csdq qked wrku", // Your Google App Password
+            user: 'selvam12042003@gmail.com', // Your Gmail address
+            pass: 'jxjj csdq qked wrku',      // Your Google App Password
         },
     });
 };
 
-
+// Send confirmation email function
 const send = async (
     bookingId,
     bookingPersonName,
@@ -387,36 +393,35 @@ const send = async (
     paymentType
 ) => {
     try {
-        console.log(`Attempting to send confirmation email to ${emailAddress}`);
         const transporter = createTransporter();
 
         const mailOptions = {
-            from: "selvam12042003@gmail.com",
+            from: 'selvam12042003@gmail.com',
             to: emailAddress,
             subject: `Booking Confirmation - Maa Hotels (ID: ${bookingId})`,
             text: `
-            Dear ${bookingPersonName},
+                Dear ${bookingPersonName},
 
-            Thank you for booking with Maa Hotels. Here are your booking details:
+                Thank you for booking with Maa Hotels. Here are your booking details:
 
-            - Booking ID: ${bookingId}
-            - Name: ${bookingPersonName}
-            - Phone: ${mobileNumber}
-            - Email: ${emailAddress}
-            - Address: ${addressDetails}
-            - Guests: ${guestDetails}
-            - AC/Non-AC: ${acNonac}
-            - Room Type: ${roomType}
-            - Check-in Date: ${checkInDate}
-            - Time: ${time} ${amPm}
-            - Room Rent: ${roomRent} (GST: ${gst})
-            - Booking Payment: ${bookingPayment}
-            - Payment Type: ${paymentType.join(", ")}
+                - Booking ID: ${bookingId}
+                - Name: ${bookingPersonName}
+                - Phone: ${mobileNumber}
+                - Email: ${emailAddress}
+                - Address: ${addressDetails}
+                - Guests: ${guestDetails}
+                - AC/Non-AC: ${acNonac}
+                - Room Type: ${roomType}
+                - Check-in Date: ${checkInDate}
+                - Time: ${time} ${amPm}
+                - Room Rent: ${roomRent} (GST: ${gst})
+                - Booking Payment: ${bookingPayment}
+                - Payment Type: ${paymentType.join(', ')}
 
-            We look forward to hosting you.
+                We look forward to hosting you.
 
-            Regards,
-            Maa Hotels
+                Regards,
+                Maa Hotels
             `,
         };
 
@@ -424,6 +429,44 @@ const send = async (
         console.log(`Confirmation email successfully sent to ${emailAddress}`);
     } catch (error) {
         console.error(`Error sending confirmation email to ${emailAddress}:`, error.message);
+        throw new Error('Email sending failed.');
+    }
+};
+
+// New endpoint: Trigger email by booking ID
+exports.sendBookingEmail = async (req, res) => {
+    try {
+        const bookingId = req.params.id;
+
+        // Fetch booking by ID
+        const booking = await Booking.findById(bookingId);
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found' });
+        }
+
+        // Trigger the email
+        await send(
+            booking.bookingId,
+            booking.bookingPersonName,
+            booking.mobileNumber,
+            booking.emailAddress,
+            booking.guestDetails,
+            booking.acNonac,
+            booking.roomType,
+            booking.addressDetails,
+            booking.checkInDate,
+            booking.time,
+            booking.amPm,
+            booking.roomRent,
+            booking.gst,
+            booking.bookingPayment,
+            booking.paymentType
+        );
+
+        res.status(200).json({ message: 'Booking confirmation email sent successfully.' });
+    } catch (error) {
+        console.error('Error sending booking email:', error.message);
+        res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 };
 
