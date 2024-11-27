@@ -360,7 +360,6 @@ exports.addBooking = async (req, res) => {
 };
 
 
-
 // Get all bookings
 exports.getBookings = async (req, res) => {
     try {
