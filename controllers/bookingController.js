@@ -441,7 +441,8 @@ exports.sendBookingEmail = async (req, res) => {
             booking.bookingPayment,
             booking.paymentType
         );
-
+        await sendNotificationEmail(savedBooking.bookingId, savedBooking.bookingPersonName);
+        
         res.status(200).json({ message: 'Booking confirmation email sent successfully.' });
     } catch (error) {
         console.error('Error sending booking email:', error.message);
@@ -451,7 +452,7 @@ exports.sendBookingEmail = async (req, res) => {
 
 
 // Updated notification email to include booking ID
-const sendNotificationEmail = async (bookingId, bookingPersonName) => {
+const sendNotificationEmail = async (bookingId, bookingPersonName ,emailAddress) => {
     try {
         console.log("Attempting to send notification email to hotel team");
         const transporter = createTransporter();
@@ -467,6 +468,7 @@ const sendNotificationEmail = async (bookingId, bookingPersonName) => {
 
             - Booking ID: ${bookingId}
             - Guest Name: ${bookingPersonName}
+            - Guest Name: ${emailAddress}
 
             Please check the admin panel for more details.
 
