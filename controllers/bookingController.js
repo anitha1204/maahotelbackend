@@ -246,7 +246,7 @@ const generateBookingId = async () => {
     return "0001";
 };
 
-// Create new booking
+// Create new booking without sending email immediately
 exports.addBooking = async (req, res) => {
     try {
         const bookingId = await generateBookingId(); // Generate the next booking ID
@@ -255,9 +255,6 @@ exports.addBooking = async (req, res) => {
         const savedBooking = await booking.save();
 
         console.log("Booking saved successfully:", savedBooking);
-
-        // Send booking confirmation email
-        
 
         res.status(201).json(savedBooking);
     } catch (error) {
@@ -414,47 +411,43 @@ const send = async (
     }
 };
 
+// Send booking confirmation email after successful booking
 exports.sendBookingEmail = async (req, res) => {
     try {
-        const { email } = req.body;  // Expecting email from the body, not URL params
-        if (!email) {
-            return res.status(400).json({ message: 'Email address is required.' });
-        }
-
-        // Find the booking by email address or handle it as needed
-        const booking = await Booking.findOne({ emailAddress: email });
+        const { bookingId } = req.body; // Get booking ID from request body (or query params)
+        
+        // Find the saved booking by ID
+        const booking = await Booking.findOne({ bookingId: bookingId });
+        
         if (!booking) {
             return res.status(404).json({ message: 'Booking not found.' });
         }
 
+        // Send the email
         await send(
-            savedBooking.bookingId, // Include booking ID
-            savedBooking.bookingPersonName,
-            savedBooking.mobileNumber,
-            savedBooking.emailAddress,
-            savedBooking.guestDetails,
-            savedBooking.acNonac,
-            savedBooking.roomType,
-            savedBooking.addressDetails,
-            savedBooking.checkInDate,
-            savedBooking.time,
-            savedBooking.amPm,
-            savedBooking.roomRent,
-            savedBooking.gst,
-            savedBooking.bookingPayment,
-            savedBooking.paymentType
+            booking.bookingId,
+            booking.bookingPersonName,
+            booking.mobileNumber,
+            booking.emailAddress,
+            booking.guestDetails,
+            booking.acNonac,
+            booking.roomType,
+            booking.addressDetails,
+            booking.checkInDate,
+            booking.time,
+            booking.amPm,
+            booking.roomRent,
+            booking.gst,
+            booking.bookingPayment,
+            booking.paymentType
         );
 
-        // Send notification email to hotel
-        await sendNotificationEmail(savedBooking.bookingId, savedBooking.bookingPersonName);
-        
         res.status(200).json({ message: 'Booking confirmation email sent successfully.' });
     } catch (error) {
         console.error('Error sending booking email:', error.message);
         res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 };
-
 
 
 // Updated notification email to include booking ID
