@@ -4,7 +4,7 @@ const bookingController = require('../controllers/bookingController');
 
 // Corrected routes without double slashes
 router.post('/', bookingController.addBooking); 
-router.post('/send-email/:id', bookingController.sendBookingEmail);
+router.post('/sendemail/:id', bookingController.sendBookingEmail);
 router.get('/', bookingController.getBookings);
 router.get('/search', bookingController.searchBooking); 
 router.get('/:id', bookingController.getBookingById); // Single slash for ':id'

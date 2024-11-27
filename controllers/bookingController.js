@@ -433,19 +433,20 @@ const send = async (
     }
 };
 
-// New endpoint: Trigger email by booking ID
-// Backend: sendBookingEmail Controller
 exports.sendBookingEmail = async (req, res) => {
     try {
-        const bookingId = req.params.id;
-
-        // Fetch booking by ID
-        const booking = await Booking.findById(bookingId);
-        if (!booking) {
-            return res.status(404).json({ message: 'Booking not found' });
+        const { email } = req.body;  // Expecting email from the body, not URL params
+        if (!email) {
+            return res.status(400).json({ message: 'Email address is required.' });
         }
 
-        // Trigger the email (assuming send function is defined elsewhere)
+        // Find the booking by email address or handle it as needed
+        const booking = await Booking.findOne({ emailAddress: email });
+        if (!booking) {
+            return res.status(404).json({ message: 'Booking not found.' });
+        }
+
+        // Send the email
         await send(
             booking.bookingId,
             booking.bookingPersonName,
@@ -470,7 +471,6 @@ exports.sendBookingEmail = async (req, res) => {
         res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 };
-
 
 
 
