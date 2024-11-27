@@ -434,6 +434,7 @@ const send = async (
 };
 
 // New endpoint: Trigger email by booking ID
+// Backend: sendBookingEmail Controller
 exports.sendBookingEmail = async (req, res) => {
     try {
         const bookingId = req.params.id;
@@ -444,7 +445,7 @@ exports.sendBookingEmail = async (req, res) => {
             return res.status(404).json({ message: 'Booking not found' });
         }
 
-        // Trigger the email
+        // Trigger the email (assuming send function is defined elsewhere)
         await send(
             booking.bookingId,
             booking.bookingPersonName,
@@ -469,6 +470,9 @@ exports.sendBookingEmail = async (req, res) => {
         res.status(500).json({ error: 'Failed to send email. Please try again later.' });
     }
 };
+
+
+
 
 // Updated notification email to include booking ID
 const sendNotificationEmail = async (bookingId, bookingPersonName) => {
