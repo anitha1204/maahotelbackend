@@ -257,26 +257,7 @@ exports.addBooking = async (req, res) => {
         console.log("Booking saved successfully:", savedBooking);
 
         // Send booking confirmation email
-        await send(
-            savedBooking.bookingId, // Include booking ID
-            savedBooking.bookingPersonName,
-            savedBooking.mobileNumber,
-            savedBooking.emailAddress,
-            savedBooking.guestDetails,
-            savedBooking.acNonac,
-            savedBooking.roomType,
-            savedBooking.addressDetails,
-            savedBooking.checkInDate,
-            savedBooking.time,
-            savedBooking.amPm,
-            savedBooking.roomRent,
-            savedBooking.gst,
-            savedBooking.bookingPayment,
-            savedBooking.paymentType
-        );
-
-        // Send notification email to hotel
-        await sendNotificationEmail(savedBooking.bookingId, savedBooking.bookingPersonName);
+        
 
         res.status(201).json(savedBooking);
     } catch (error) {
@@ -446,25 +427,27 @@ exports.sendBookingEmail = async (req, res) => {
             return res.status(404).json({ message: 'Booking not found.' });
         }
 
-        // Send the email
         await send(
-            booking.bookingId,
-            booking.bookingPersonName,
-            booking.mobileNumber,
-            booking.emailAddress,
-            booking.guestDetails,
-            booking.acNonac,
-            booking.roomType,
-            booking.addressDetails,
-            booking.checkInDate,
-            booking.time,
-            booking.amPm,
-            booking.roomRent,
-            booking.gst,
-            booking.bookingPayment,
-            booking.paymentType
+            savedBooking.bookingId, // Include booking ID
+            savedBooking.bookingPersonName,
+            savedBooking.mobileNumber,
+            savedBooking.emailAddress,
+            savedBooking.guestDetails,
+            savedBooking.acNonac,
+            savedBooking.roomType,
+            savedBooking.addressDetails,
+            savedBooking.checkInDate,
+            savedBooking.time,
+            savedBooking.amPm,
+            savedBooking.roomRent,
+            savedBooking.gst,
+            savedBooking.bookingPayment,
+            savedBooking.paymentType
         );
 
+        // Send notification email to hotel
+        await sendNotificationEmail(savedBooking.bookingId, savedBooking.bookingPersonName);
+        
         res.status(200).json({ message: 'Booking confirmation email sent successfully.' });
     } catch (error) {
         console.error('Error sending booking email:', error.message);
