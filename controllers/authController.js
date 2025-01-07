@@ -565,7 +565,7 @@ const resetPassword = async (req, res) => {
     }
 };
 
-exports.searchBooking = async (req, res) => {
+const searchBooking = async (req, res) => {
     try {
         const { query } = req.query; 
         const user  = await MaahotelDatas.find({
@@ -586,5 +586,5 @@ module.exports = {
     login,
     forgotPassword,
     resetPassword,
-    searchBooking
+    searchBooking,
 };
