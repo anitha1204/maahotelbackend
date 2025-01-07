@@ -565,9 +565,26 @@ const resetPassword = async (req, res) => {
     }
 };
 
+exports.searchBooking = async (req, res) => {
+    try {
+        const { query } = req.query; 
+        const user  = await MaahotelDatas.find({
+            $or: [
+                { username: new RegExp(query, 'i') },
+                { email: new RegExp(query, 'i') },
+               
+               
+            ]
+        });
+        res.status(200).json(bookings);
+    } catch (error) {
+        res.status(500).json({ error: 'Server error. Please try again later.' });
+    }
+};
 module.exports = {
     register,
     login,
     forgotPassword,
     resetPassword,
+    searchBooking
 };

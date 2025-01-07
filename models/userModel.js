@@ -15,6 +15,10 @@ const MaahotelSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  profilePicture: {
+    type: String,
+    default: "",
+  },
   resetToken: {
     type: String,
   },
