@@ -1,3 +1,7 @@
+
+
+
+
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -195,20 +199,31 @@ const forgotPassword = async (req, res) => {
 
         user.resetToken = token;
         user.resetTokenExpiry = expiry;
-        await user.save();
 
-        await sendResetEmail(user.email, token);
+        try {
+            await user.save();
+        } catch (dbError) {
+            console.error('Database Save Error:', dbError);
+            return res.status(500).json({ msg: 'Database error while saving user data' });
+        }
+
+        try {
+            await sendResetEmail(user.email, token);
+        } catch (emailError) {
+            console.error('Email sending failed:', emailError);
+            return res.status(500).json({ msg: 'Failed to send email' });
+        }
 
         res.status(200).json({ msg: 'Password reset email sent' });
     } catch (error) {
         console.error('Error during password reset:', error.stack);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error' });
     }
 };
 
 // Reset Password Function
 const resetPassword = async (req, res) => {
-    const { token, newPassword } = cleanInput(req.body);
+    const { token, newPassword } = req.body;
 
     try {
         if (!token || token.length !== 6) {
@@ -228,12 +243,18 @@ const resetPassword = async (req, res) => {
         user.password = await bcrypt.hash(newPassword, salt);
         user.resetToken = undefined;
         user.resetTokenExpiry = undefined;
-        await user.save();
+
+        try {
+            await user.save();
+        } catch (dbError) {
+            console.error('Database Save Error:', dbError);
+            return res.status(500).json({ msg: 'Database error while updating password' });
+        }
 
         res.status(200).json({ msg: 'Password reset successful' });
     } catch (error) {
         console.error('Error during password reset:', error.stack);
-        res.status(500).send('Server error');
+        res.status(500).json({ msg: 'Server error' });
     }
 };
 
