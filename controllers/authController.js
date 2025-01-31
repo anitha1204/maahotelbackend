@@ -1,7 +1,3 @@
-
-
-
-
 const nodemailer = require('nodemailer');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -9,6 +5,8 @@ const dotenv = require('dotenv');
 const MaahotelDatas = require('../models/userModel');
 
 dotenv.config();
+
+const generateToken = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 // Function to send email
 const sendResetEmail = async (email, token) => {
@@ -70,170 +68,84 @@ const validateEmail = (email) => {
     return emailPattern.test(email);
 };
 
-// Register Function (POST)
+// Register Function
 const register = async (req, res) => {
-    const { username, email, password } = cleanInput(req.body);
-
-    // Log incoming request
-    debugLog('Register request', req.body);
-
     try {
+        const { username, email, password } = req.body;
+
         if (!username || !email || !password) {
-            return res.status(400).json({ msg: 'Username, email, and password are required' });
+            return res.status(400).json({ msg: 'All fields are required' });
         }
 
-        // Validate username, email, and password
-        if (!validateUsername(username)) {
-            return res.status(400).json({ msg: 'Username must contain only letters and have at least one uppercase or one lowercase letter' });
-        }
+        const userExists = await User.findOne({ $or: [{ username }, { email }] });
 
-        if (!validateEmail(email)) {
-            return res.status(400).json({ msg: 'Invalid email format' });
-        }
-
-        if (!validatePassword(password)) {
-            return res.status(400).json({ msg: 'Password must be at least 8 characters long and include at least one uppercase or lowercase letter, one number, and one special character' });
-        }
-
-        // Convert username to uppercase
-        const uppercaseUsername = username.toUpperCase();
-
-        // Log input validation
-        debugLog('Username', uppercaseUsername);
-        debugLog('Email', email);
-        debugLog('Password', password);
-
-        let user = await MaahotelDatas.findOne({ $or: [{ username: uppercaseUsername }, { email }] });
-
-        if (user) {
+        if (userExists) {
             return res.status(400).json({ msg: 'User already exists' });
         }
 
-        user = new MaahotelDatas({ 
-            username: uppercaseUsername,
-            email,
-            password,
-        });
-
         const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(password, salt);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
+        const user = new User({ username, email, password: hashedPassword });
         await user.save();
 
         res.status(201).json({ msg: 'User registered successfully' });
     } catch (error) {
-        console.error('Error during registration:', error.stack);
-        res.status(500).send('Server error');
-    }
-};
-
-
-
-// Login Function
-const login = async (req, res) => {
-    const { usernameOrEmail, password } = cleanInput(req.body);
-
-    try {
-        if (!usernameOrEmail || !password) {
-            return res.status(400).json({ msg: 'Username/Email and password are required' });
-        }
-
-        const uppercaseUsernameOrEmail = usernameOrEmail.toUpperCase();
-
-        const user = await MaahotelDatas.findOne({
-            $or: [{ username: uppercaseUsernameOrEmail }, { email: usernameOrEmail }]
-        });
-
-        if (!user) {
-            return res.status(400).json({ msg: 'Invalid credentials' });
-        }
-
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.status(400).json({ msg: 'Invalid credentials' });
-        }
-
-        const payload = {
-            user: {
-                id: user.id,
-            },
-        };
-
-        jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
-            if (err) {
-                console.error('JWT Signing Error:', err.stack);
-                return res.status(500).send('Server error');
-            }
-
-            debugLog('Generated JWT', token);
-
-            res.json({
-                msg: 'Login successful',
-                token,
-                user: {
-                    username: user.username,
-                    email: user.email
-                }
-            });
-        });
-    } catch (error) {
-        console.error('Error during login:', error.stack);
-        res.status(500).send('Server error');
-    }
-};
-
-// Forgot Password Function
-const forgotPassword = async (req, res) => {
-    const { email } = req.body;
-
-    try {
-        const user = await MaahotelDatas.findOne({ email });
-
-        if (!user) {
-            return res.status(400).json({ msg: 'User with this email does not exist' });
-        }
-
-        const token = generateToken(6);
-        const expiry = Date.now() + 3600000; // 1 hour
-
-        user.resetToken = token;
-        user.resetTokenExpiry = expiry;
-
-        try {
-            await user.save();
-        } catch (dbError) {
-            console.error('Database Save Error:', dbError);
-            return res.status(500).json({ msg: 'Database error while saving user data' });
-        }
-
-        try {
-            await sendResetEmail(user.email, token);
-        } catch (emailError) {
-            console.error('Email sending failed:', emailError);
-            return res.status(500).json({ msg: 'Failed to send email' });
-        }
-
-        res.status(200).json({ msg: 'Password reset email sent' });
-    } catch (error) {
-        console.error('Error during password reset:', error.stack);
+        console.error(error);
         res.status(500).json({ msg: 'Server error' });
     }
 };
 
-// Reset Password Function
-const resetPassword = async (req, res) => {
-    const { token, newPassword } = req.body;
-
+// Login Function
+const login = async (req, res) => {
     try {
-        if (!token || token.length !== 6) {
-            return res.status(400).json({ msg: 'Invalid token length' });
+        const { usernameOrEmail, password } = req.body;
+        const user = await User.findOne({
+            $or: [{ username: usernameOrEmail.toUpperCase() }, { email: usernameOrEmail }]
+        });
+
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.status(400).json({ msg: 'Invalid credentials' });
         }
 
-        const user = await MaahotelDatas.findOne({
-            resetToken: token,
-            resetTokenExpiry: { $gt: Date.now() },
-        });
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        res.json({ msg: 'Login successful', token, user: { username: user.username, email: user.email } });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error' });
+    }
+};
+
+// Forgot Password
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.status(400).json({ msg: 'User not found' });
+        }
+
+        const token = generateToken();
+        user.resetToken = token;
+        user.resetTokenExpiry = Date.now() + 3600000;
+
+        await user.save();
+        await sendResetEmail(user.email, token);
+
+        res.json({ msg: 'Password reset email sent' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'Server error' });
+    }
+};
+
+// Reset Password
+const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        const user = await User.findOne({ resetToken: token, resetTokenExpiry: { $gt: Date.now() } });
 
         if (!user) {
             return res.status(400).json({ msg: 'Invalid or expired token' });
@@ -244,16 +156,11 @@ const resetPassword = async (req, res) => {
         user.resetToken = undefined;
         user.resetTokenExpiry = undefined;
 
-        try {
-            await user.save();
-        } catch (dbError) {
-            console.error('Database Save Error:', dbError);
-            return res.status(500).json({ msg: 'Database error while updating password' });
-        }
+        await user.save();
 
-        res.status(200).json({ msg: 'Password reset successful' });
+        res.json({ msg: 'Password reset successful' });
     } catch (error) {
-        console.error('Error during password reset:', error.stack);
+        console.error(error);
         res.status(500).json({ msg: 'Server error' });
     }
 };
